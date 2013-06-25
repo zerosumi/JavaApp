@@ -8,18 +8,13 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 public class ProxyPanel extends JFrame implements ActionListener {
+	
 	private String host = "000.000.000.000";
-
 	private String port = "0000";
-
 	private JLabel label1 = new JLabel("Proxy IP:");
-
 	private JLabel label2 = new JLabel("Proxy Port:");
-
 	private JTextField hosttext = new JTextField();
-
 	private JTextField porttext = new JTextField();
-
 	private JButton button = new JButton("Done");
 
 	public ProxyPanel(int x, int y) {

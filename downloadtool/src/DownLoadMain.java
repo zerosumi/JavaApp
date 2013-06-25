@@ -20,8 +20,9 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.awt.CheckboxGroup;
 
-public class DownLoad extends JFrame implements ActionListener {
+public class DownLoadMain extends JFrame implements ActionListener {
 
+	//display part
 	private JPanel contentPane;
 	private JPanel progressPane;
 	private JTextField downloadURL = new JTextField();
@@ -38,12 +39,15 @@ public class DownLoad extends JFrame implements ActionListener {
 	private JLabel threadsLabel = new JLabel("Threads");
 	private JTextArea textArea = new JTextArea();
 	private JProgressBar jProgressBar = new JProgressBar();
+	//threads #
 	private int nTread = 1;
+	//proxy setting
 	static String host = "";
 	static String port = "";
 	DownLoadFile downFile;
 
-	public DownLoad() {
+	public DownLoadMain() {
+		
 		contentPane = (JPanel) this.getContentPane();
 		contentPane.setLayout(null);
 
@@ -107,14 +111,14 @@ public class DownLoad extends JFrame implements ActionListener {
 	}
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		DownLoad download = new DownLoad();
+		
+		DownLoadMain download = new DownLoadMain();
 		download.setVisible(true);
 	}
 
 	public void actionPerformed(ActionEvent e) {
 
-		// TODO Auto-generated method stub
+		//open a location to save file
 		if (e.getSource() == open) {
 			JFileChooser fc = new JFileChooser();
 			if (fc.showSaveDialog(this) == fc.APPROVE_OPTION) {
@@ -122,16 +126,18 @@ public class DownLoad extends JFrame implements ActionListener {
 				savepath.setText(f.getAbsolutePath());
 			}
 		}
+		//start to download
 		if (e.getSource() == start) {
 			textArea.setText("");
 			String URL = downloadURL.getText();
-			String saveURL = savepath.getText();
-			if (URL.compareTo("") == 0 || saveURL.compareTo("") == 0) {
+			String diskPath = savepath.getText();
+			if (URL.compareTo("") == 0 || diskPath.compareTo("") == 0) {
 				textArea.setText("Please input URL and save location");
 			} else {
 				try {
-					downFile = new DownLoadFile(URL, saveURL, textArea, nTread,
+					downFile = new DownLoadFile(URL, diskPath, textArea, nTread,
 							jProgressBar);
+					// will call run() and generate DLFThreads
 					downFile.start();
 					textArea.append("Main thread starts");
 					stop.setEnabled(true);
@@ -145,6 +151,7 @@ public class DownLoad extends JFrame implements ActionListener {
 
 			}
 		}
+		//if threads change, update
 		if (e.getSource() == nThreadBox) {
 			String item = nThreadBox.getSelectedItem().toString();
 			//System.out.println("# of threads is:" + item);
@@ -157,6 +164,7 @@ public class DownLoad extends JFrame implements ActionListener {
 			textArea.append("\nStop Download");
 			
 		}
+		//proxy setting
 		if (e.getSource() == proxybutton) {
 			if (proxybutton.isSelected()) {
 				// proxybutton.get

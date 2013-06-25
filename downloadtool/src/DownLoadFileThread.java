@@ -12,19 +12,23 @@ import javax.swing.JTextArea;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class LownLoadFileThread extends Thread {
+public class DownLoadFileThread extends Thread {
 	private JProgressBar jProgressBar;
 	String URL;
+	JTextArea textArea = new JTextArea();
+	//start and end position for current child thread
 	long startPos;
 	long endPos;
 	int threadID;
-	JTextArea textArea = new JTextArea();
+	//allow mutilthreads read/write
 	RandomAccessFile file;
+	//how many finished
 	private int readPos = 0;
-	private int in = 0;
+	//everytime read block size
+	private int inc = 0;
 
-	public LownLoadFileThread(String URL, long startPos, long endPos, int id,
-			JTextArea textArea, JProgressBar jProgressBar, String saveURL)
+	public DownLoadFileThread(String URL, long startPos, long endPos, int id,
+			JTextArea textArea, JProgressBar jProgressBar, String diskPath)
 			throws IOException {
 		this.jProgressBar = jProgressBar;
 		this.URL = URL;
@@ -32,36 +36,39 @@ public class LownLoadFileThread extends Thread {
 		this.endPos = endPos;
 		this.threadID = id;
 		this.textArea = textArea;
-		file = new RandomAccessFile(saveURL, "rw");
+		file = new RandomAccessFile(diskPath, "rw");
 		file.seek(startPos);
 	}
 
 	public void run() {
-		// DownLoad download = new DownLoad();
+		
 		try {
 			URL url = new URL(URL);
 			HttpURLConnection httpConnection = (HttpURLConnection) url
 					.openConnection();
 			String sProperty = "bytes=" + startPos + "-";
+			//using net.httpURLConnection to set property
 			httpConnection.setRequestProperty("RANGE", sProperty);
 			// System.out.println("Thread no."+threadID+" is now downloading...");
 			textArea.append("\nThread" + threadID + " is now downloading");
 			InputStream input = httpConnection.getInputStream();
 			byte[] buf = new byte[1024];
+			//read 1024b everytime
 			int offset;
 			offset = (int) endPos - (int) startPos;
 			if (offset > 1024)
 				offset = 1024;
-			while ((in = input.read(buf, 0, offset)) > 0 && startPos < endPos) {
+			while ((inc = input.read(buf, 0, offset)) > 0 && startPos < endPos) {
+				//last part of file < 1024
 				if (((int) endPos - (int) startPos) < 1024)
-					in = (int) endPos - (int) startPos;
+					inc = (int) endPos - (int) startPos;
 				/*
-				 * if(in<1024){
-				 * System.out.println("in is :"+in+" -- startpos is "+startPos);
+				 * if(inc<1024){
+				 * System.out.println("inc is :"+inc+" -- startpos is "+startPos);
 				 * }
 				 */
-				readPos += in;
-				// System.out.println("read "+in+" bytes");
+				readPos += inc;
+				// System.out.println("read "+inc+" bytes");
 				textArea.append("\nThread" + threadID + " reads " + readPos
 						+ "bytes, start is :" + startPos + " and end is:"
 						+ endPos);
@@ -69,8 +76,9 @@ public class LownLoadFileThread extends Thread {
 				if (offset > 1024)
 					offset = 1024;
 				// System.out.println("threadID: "+threadID+" started: "+startPos+" offset: "+offset);
-				file.write(buf, 0, in);
-				startPos += in;
+				//write to file
+				file.write(buf, 0, inc);
+				startPos += inc;
 
 			}
 			// System.out.println("thread "+threadID+" complete");

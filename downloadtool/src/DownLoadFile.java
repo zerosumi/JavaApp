@@ -11,35 +11,29 @@ import javax.swing.JTextArea;
 import javax.swing.Timer;
 
 public class DownLoadFile extends Thread {
+	//display
 	private JPanel progressPane;
-
 	private String URL;
-
-	private String saveURL;
-
-	int nthread;
-
+	private String diskPath;
 	String info = new String();
-
 	JTextArea textArea = new JTextArea();
-
 	JProgressBar jProgressBar;
-
+	//threads #
+	int nthread;
+	//every child threads range
 	long[] startPos;
-
 	long[] endPos;
-
 	long fileLength;
-
-	LownLoadFileThread[] downFileSplitter;
-
+	//child threads
+	DownLoadFileThread[] downFileSplitter;
+	
 	Timer timer;
 
-	public DownLoadFile(String URL, String saveURL, JTextArea textArea,
+	public DownLoadFile(String URL, String diskPath, JTextArea textArea,
 			int nthread, JProgressBar jProgressBar) {
 		this.jProgressBar = jProgressBar;
 		this.URL = URL;
-		this.saveURL = saveURL;
+		this.diskPath = diskPath;
 		this.nthread = nthread;
 		this.startPos = new long[nthread];
 		this.endPos = new long[nthread];
@@ -47,21 +41,22 @@ public class DownLoadFile extends Thread {
 	}
 
 	public void run() {
+		
 		info = "Target:" + URL;
 		textArea.append("\n" + info);
 		info = "\n# of Threads:" + nthread;
 		textArea.append("\n" + info);
 		try {
+			//get size first, then slice to child threads
 			fileLength = getFileSize(URL);
 			// System.out.println("fileLength is :"+fileLength);
 			if (fileLength == -1) {
-				// System.err.println("Unknown file length");
 				textArea.append("\nUnknown file length, please retry!");
 			} else {
 				if (fileLength == -2) {
-					// System.err.println("Cannot access");
 					textArea.append("\nCannot access target file, please retry!");
 				} else {
+					//slice file
 					for (int i = 0; i < startPos.length; i++)
 						startPos[i] = (long) (i * (fileLength / startPos.length));
 					for (int i = 0; i < endPos.length - 1; i++)
@@ -73,7 +68,7 @@ public class DownLoadFile extends Thread {
 						// System.out.println(info);
 						textArea.append("\n" + info);
 					}
-					downFileSplitter = new LownLoadFileThread[startPos.length];
+					downFileSplitter = new DownLoadFileThread[startPos.length];
 					jProgressBar.setMaximum(100);
 					jProgressBar.setMinimum(0);
 					// jProgressBar.isStringPainted();
@@ -81,19 +76,20 @@ public class DownLoadFile extends Thread {
 					jProgressBar.setString("0%");
 					// progressPane.add(jProgressBar);
 
+					//child threads start
 					for (int i = 0; i < startPos.length; i++) {
-						downFileSplitter[i] = new LownLoadFileThread(URL,
+						downFileSplitter[i] = new DownLoadFileThread(URL,
 								startPos[i], endPos[i], i, textArea,
-								jProgressBar, saveURL);
+								jProgressBar, diskPath);
 						info = "Thread" + i + " starts";
 						textArea.append("\n" + info);
 						downFileSplitter[i].start();
 						// System.out.println(info);
 					}
 					timer = new Timer(100, new ActionListener() {
-
+						//listen until finished, meanwhile update jprogressbar
+						//seems not efficient cuz every time should recount readdata, not by increment
 						public void actionPerformed(ActionEvent arg0) {
-							// TODO Auto-generated method stub
 							int readTotal = 0;
 							boolean finished = true;
 							for (int i = 0; i < startPos.length; i++) {
@@ -131,6 +127,7 @@ public class DownLoadFile extends Thread {
 		}
 	}
 
+	//shutdown, kill childthreads first
 	public void shutdown() {
 		for (int i = 0; i < startPos.length; i++) {
 			downFileSplitter[i].stop();
@@ -138,6 +135,7 @@ public class DownLoadFile extends Thread {
 		this.stop();
 	}
 
+	//to get size from header
 	public long getFileSize(String URL) {
 		int fileLength = -1;
 		try {
@@ -159,7 +157,7 @@ public class DownLoadFile extends Thread {
 						//textArea.append("\nFile length:---" + length);
 						fileLength = Integer.parseInt(httpConnection
 								.getHeaderField(sHeader));
-						textArea.append("\nKnown file length:" + fileLength);
+						textArea.append("\nFile length:" + fileLength);
 						break;
 					}
 				} else {
